@@ -1,0 +1,1 @@
+QT_QPA_PLATFORM=offscreen /usr/bin/phantomjs --proxy=192.168.0.64:6487 --web-security=false --ignore-ssl-errors=true  --load-images=false  /usr/lib/node_modules/xmdban/info_douban.js $*
