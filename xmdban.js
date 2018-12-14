@@ -1,4 +1,4 @@
-﻿// change log
+// change log
 
 // 0.08.14 move apikey into xmdban.config.js 
 // 0.06.15 json as input and retuen parameters
@@ -43,7 +43,8 @@ pageIpTest.customHeaders = {    "Referer": "https://www.google.com/","Accept-Lan
   else 
   {
   	console.log( pageIpTest.plainText.replace("\n","") );
-	}
+  }
+	pageIpTest.close();
 	fnDone();
  });
 }
@@ -61,7 +62,9 @@ pageIpTest.customHeaders = {    "Referer": "https://www.google.com/","Accept-Lan
   else 
   {
   	console.log( pageIpTest.plainText.replace("\n",""));
-	}
+     }
+	pageIpTest.close();
+//console.log("closed");
 	fnDone();
  });
 }
@@ -340,7 +343,8 @@ var result = new Object();
 	//	console.log (tempDoubanLink);		
 		pageDouban.open ( tempDoubanLink ,function(status) {
 						if (status !== 'success') {
-									 return  tempDoubanLink + " not success";
+									pageDouban.close(); 
+									return  tempDoubanLink + " not success";
 						}
 				   	else 
 				  	{
@@ -354,20 +358,23 @@ var result = new Object();
 								{
 										var imdb_re = /(http:\/\/www.imdb.com\/title\/tt\d+(\.\d)*)/i;
 										var imdb_res = 	tempDoubanInfo.match(imdb_re);
-//									console.log ("imdb_res  " + imdb_res) ; 
+					//				console.log ("imdb_res  " + imdb_res) ; 
 										if (imdb_res !== null) tempIMDB = imdb_res[0].replace("http://www.imdb.com/title/",""); else tempIMDB = undefined;
 								}
 								
-				//				console.log ("IMDB:" + tempIMDB);
+					//		console.log ("IMDB:" + tempIMDB);
 								
 								if (tempIMDB == imdb_id_input || tempIMDB == imdb_id_link_input || (typeof(imdb_id_input) == "undefined" &&  typeof(imdb_id_link_input)== "undefined" ) ||  typeof(tempIMDB) == "undefined" )				  		
 				  			{
 			  				tempDoubanTitle = pageDouban.title.replace(" (\u8c46\u74e3)","");
 						  	tempDoubanTitleOriginal = pageDouban.evaluate( 	function() { var o2 = document.querySelector("html>body>div#wrapper>div#content>h1>span");return o2.innerText; });
 								if (tempDoubanTitleOriginal != tempDoubanTitle ) tempDoubanTitleOriginal = tempDoubanTitleOriginal.replace( tempDoubanTitle + " " ,"");
-
+					//			console.log ( tempDoubanTitleOriginal +  " " + tempDoubanTitle);
+							
 								tempDoubanDirectors = pageDouban.evaluate( function() { var dt2 = document.querySelector('div#info span span.attrs'); return dt2.innerText; }); 
-								tempDoubanDirectors = tempDoubanDirectors.toString().replace (/,/g , " / ")
+								if ( tempDoubanDirectors != null) tempDoubanDirectors = tempDoubanDirectors.toString().replace (/,/g , " / "); else  tempDoubanDirectors = undefined;
+				//				console.log ("DoubanDirectors:" + tempDoubanDirectors);
+
 
 				      	tempDoubanYear = pageDouban.evaluate( function() { var ye = document.querySelector('span.year'); return ye.innerText; }); 
 				        tempDoubanYear = tempDoubanYear.replace("(","").replace(")",""); 
@@ -399,7 +406,8 @@ var result = new Object();
 								//		console.log(cnp_res);
 									//	tempDoubanPremieredCN = cnp_res[0].replace("initialReleaseDate\" content=\"","").replace("(中国大陆","");
 								//		if (cnp_res != null) tempDoubanPremieredCN = cnp_res[0].substring(29,39); else tempDoubanPremieredCN= undefined;
-										if (cnp_res != null) tempDoubanPremieredCN = cnp_res[0].replace("initialReleaseDate\" content=\"","").replace("(中国大陆",""); else tempDoubanPremieredCN= undefined;
+//										if (cnp_res != null) tempDoubanPremieredCN = cnp_res[0].replace("initialReleaseDate\" content=\"","").replace("(中国大陆",""); else tempDoubanPremieredCN= undefined;
+										if (cnp_res != null) tempDoubanPremieredCN = cnp_res[0].replace("initialReleaseDate\" content=\"","").substring(0,10); else tempDoubanPremieredCN= undefined;
 								//		console.log (tempDoubanPremieredCN);
 									}
 							}
@@ -418,6 +426,7 @@ var result = new Object();
 				if ( tempDoubanDirectors != "" && typeof(tempDoubanDirectors) != 'undefined')  {result.director_douban = tempDoubanDirectors; }
 
 				console.log ( JSON.stringify(result))	;			
+				 pageDouban.close(); 
 				 fnCallbackFinal (result);				
 				}
 				});
@@ -467,13 +476,17 @@ fnWebScrapingIMDB = function(input_json , fnCallbackFinal)
 	result.id_imdb = imdb_id_input;
 	tempOGTitle = pageIMDB.evaluate( function() { var og2 = document.querySelector('meta[property=og\\3Atitle]'); return og2.getAttribute('content'); });
 	tempOGType = pageIMDB.evaluate( function() { var og2 =  document.querySelector('meta[property=og\\3Atype]'); return og2.getAttribute('content'); });
-	tempCR = pageIMDB.evaluate( function() { var og2 =  document.querySelector('meta[ itemprop=contentRating]'); return og2.getAttribute('content'); });
-	tempCR = "Rated " + tempCR;
+//	tempCR = pageIMDB.evaluate( function() { var og2 =  document.querySelector('meta[ itemprop=contentRating]'); return og2.getAttribute('content'); });
+//tempCR = "Rated " + tempCR;
+//application/ld+json
+var tempCRjsonString = pageIMDB.evaluate( function() { var og2 =  document.querySelector('html head script[type=application\\2Fld\\2Bjson]'); var j = og2.innerText; return j;});
+var tempCRjson = JSON.parse(tempCRjsonString);
+tempCR = tempCRjson.contentRating
+//console.log(tempCR3.contentRating);
 //console.log("og:Title:" + tempOGTitle);
 //console.log("og:Type: " + tempOGType);
 //console.log("Content Rating:	[" + tempCR + "]");
 // var tempUserRate = pageIMDB.evaluate( function() { var ur = document.querySelector("span.inline-block,.text-left,.vertically-middle"); return ur;});
-
 var tempUserRate = pageIMDB.evaluate( function() { var ur = document.querySelector("div#ratings-bar div" ); return ur.innerText;});
 //console.log('tR:' + tempUserRate);
 	tempUserRate = tempUserRate.replace (",","");
@@ -554,7 +567,6 @@ tempTitle = tempTitle.replace (tempYear,"");
  if ( tempCR != "Rated null" && tempCR != ""  ) { result.rating_mpaa =  tempCR ;}
  
 	console.log (JSON.stringify(result));
-	
 fnCallbackFinal (result);
 }
 	pageIMDB.close();
@@ -582,7 +594,7 @@ fnIDxIMDB2TMDB = function(input_json ,  fnCallbackFinal)
     	  if (typeof(input_json.id_imdb_link) != 'undefined' ) imdb_id_link_input = input_json.id_imdb_link; 
     }	 	
 
-  var	addressTMDB = config.tmdb.apiUrl + "find/" + imdb_id_input + "?" + config.tmdb.apikey + "&external_source=imdb_id";
+  var	addressTMDB = config.tmdb.apiUrl + "find/" + imdb_id_input + "?" + config.tmdb.apiKey + "&external_source=imdb_id";
   var tempTmdbYear, tempTmdbTitleOriginal, tempTmdbID ,tempTmdbType ,tempPoster, tempBackdrop;
 	var pageTMDB = require('webpage').create();
  	pageTMDB.settings.userAgent = config.tmdb.userAgent;
@@ -716,7 +728,6 @@ fnIDxIMDB2TMDB = function(input_json ,  fnCallbackFinal)
 			console.log ("imdb_id_link_input:" + imdb_id_link_input);
 			fnCallbackFinal (result); 
 		}	
-		
 	}
 	// else if no episode_title_tmdb
 	
@@ -731,7 +742,7 @@ fnIDxIMDB2Douban = function (input_json, fnCallbackFinal)
 	var keywordDoubanSearch = "chiphell" ;
 
 	mFnMatchImdb = function(input_match) {
-		
+//	console.log ("mFnMatchImdb checked:" + input_match.checked + " " + input_match.id.length)
 		if (input_match.checked < input_match.id.length  )
 		{
 			
@@ -742,10 +753,10 @@ fnIDxIMDB2Douban = function (input_json, fnCallbackFinal)
 			
 			var tout = Math.floor(Math.random() * 500); 
 			
-			console.log ("checked:" + input_match.checked + " " + JSON.stringify(tempDo) + "  delay:" + tout );
+			console.log ("mFnMatchImdb checked:" + input_match.checked + " " + JSON.stringify(tempDo) + "  delay:" + tout );
 			
 			setTimeout( fnWebScrapingDouban(tempDo, function(returnDoubanInfo){
-				// console.log (JSON.stringify(returnDoubanInfo));
+		//		 console.log (JSON.stringify(returnDoubanInfo));
 		//		console.log (input_match.id_imdb + " " + returnDoubanInfo.id_imdb + " " + (input_match.id_imdb == returnDoubanInfo.id_imdb) );
 		//		console.log (input_match.id_imdb_link + " " + returnDoubanInfo.id_imdb + " " + (input_match.id_imdb_link == returnDoubanInfo.id_imdb) );
 					if ((typeof(returnDoubanInfo.id_imdb) == "string" && returnDoubanInfo.id_imdb == input_match.id_imdb) 
@@ -785,14 +796,19 @@ fnIDxIMDB2Douban = function (input_json, fnCallbackFinal)
 		}
 		else
 		{	
-			console.log ("all douban ids checked"); 
-			console.log (JSON.stringify(input_match));
+			console.log ("all douban ids checked but none match"); 
+//			console.log (JSON.stringify(input_match));
+				delete	input_match.q ;
+				delete		input_match.id;
+				delete  	input_match.checked ;			
+			
 			fnCallbackFinal (input_match);
 		}
 		
 	};
 
 	mFnSearchDouban  = function(input_json){
+   console.log ("mFnSearchDouban");
    console.log (input_json.media_type);
    console.log (input_json.id_imdb + " " + typeof(input_json.title_imdb));
    console.log (input_json.title_original_tmdb + "  " + typeof(input_json.title_original_tmdb));
@@ -835,11 +851,8 @@ fnIDxIMDB2Douban = function (input_json, fnCallbackFinal)
     qObject[input_json_keys[nextKey]] = input_json[input_json_keys[nextKey]];
     }
 
-
  // if (typeof(input_json.id_imdb)=="string") qObject.id_imdb = input_json.id_imdb;
  // if (typeof(input_json.id_imdb_link)=="string") qObject.id_imdb_link = input_json.id_imdb_link;
-  
-  
   
 	console.log (JSON.stringify(qObject));
   fnDoubanSearch (qObject,function(resultDoubanTitle){
@@ -847,6 +860,7 @@ fnIDxIMDB2Douban = function (input_json, fnCallbackFinal)
   delete		resultDoubanTitle.total;
   	resultDoubanTitle.checked = 0;
   	console.log(JSON.stringify(resultDoubanTitle));
+		console.log ("result id count " + qObject.id.length)
   	mFnMatchImdb (resultDoubanTitle);
   	});
 };
@@ -855,7 +869,7 @@ fnIDxIMDB2Douban = function (input_json, fnCallbackFinal)
 //	
 	fnWebScrapingIMDB (input_json,function(output_json){
 		  console.log (output_json.title_imdb);
-		  console.log (output_json.id_imdb_link);
+		  console.log ("id_imdb_link:"  +  output_json.id_imdb_link);
 		fnIDxIMDB2TMDB (output_json, mFnSearchDouban);
 	}  );
 // search tmdb_original_title + year_tmdb    					match id_imdb 
@@ -866,6 +880,7 @@ fnIDxTMDB2Douban = function (input_json, fnCallbackFinal)
 {
 	fnIDxTMDB2IMDB(input_json,function(result)
 	{
+		console.log ("fnIDxTMDB2IMDB done.");
 		fnIDxIMDB2Douban (result,fnCallbackFinal);
 	}
 	);
@@ -891,15 +906,15 @@ fnMysqlUpdate = function (input, fnCallbackFinal)
 				mysql_option_douban_value += "\"" + input[k] +"\"";		
 				mysql_option_douban_suffix += k + "=VALUES(" + k +")";	
     }
- 				var mysql_option = "INSERT INTO uniqueid_info (" + mysql_option_douban_prefix + ") VALUES (" + mysql_option_douban_value + ") ON DUPLICATE KEY UPDATE " + mysql_option_douban_suffix ; 
+ 				var mysql_option = "INSERT INTO " + config.mysql.table + " (" + mysql_option_douban_prefix + ") VALUES (" + mysql_option_douban_value + ") ON DUPLICATE KEY UPDATE " + mysql_option_douban_suffix ; 
    			console.log (mysql_option);
    			
    			
  var	mysqlCMD_update = 
-				["-h192.168.0.64",
-				"-uabcdef",
-				 "-pABCD012abcdef",
-				 "MyAbcdef123",
+				["-h" + config.mysql.host,
+				"-u" + config.mysql.username,
+				 "-p" + config.mysql.password,
+				 config.mysql.database,
 				 "-e",   mysql_option 
 				 ] ;
 
